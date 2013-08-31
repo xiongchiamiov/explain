@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-$MAN = $ENV{'W3MMAN_MAN'} || '@MAN@';
+$MAN = $ENV{'W3MMAN_MAN'} || 'man';
 $QUERY = $ENV{'QUERY_STRING'} || $ARGV[0];
 $SCRIPT_NAME = $ENV{'SCRIPT_NAME'} || $0;
 $CGI = "file://$SCRIPT_NAME";
@@ -92,7 +92,8 @@ if ($query{"local"}) {
 
   $section =~ s:([^-\w\200-\377.,])::g;
   $man =~ s:([^-\w\200-\377.,])::g;
-  open(F, "MAN_KEEP_FORMATTING=1 $MAN $section $man 2> /dev/null |");
+  $command = "MAN_KEEP_FORMATTING=1 $MAN $section $man 2> /dev/null |";
+  open(F, $command);
 }
 $ok = 0;
 undef $header;
