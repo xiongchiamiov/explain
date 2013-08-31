@@ -167,13 +167,14 @@ class manpage(object):
         self.path = path
         self.shortpath = os.path.basename(self.path)
         self.name = extractname(self.path)
+        self.section = 1 # FIXME: Don't hard-code this!
         self.aliases = set([self.name])
         self.synopsis = None
         self.paragraphs = None
         self._text = None
 
     def read(self):
-        cmd = [config.MAN2HTML, urllib.urlencode({'man' : self.name})]
+        cmd = [config.MAN2HTML, urllib.urlencode({'man' : '%s(%s)' % (self.name, self.section)})]
         logger.info('executing %r', ' '.join(cmd))
         self._text = subprocess.check_output(cmd, stderr=devnull, env=ENV)
         try:
