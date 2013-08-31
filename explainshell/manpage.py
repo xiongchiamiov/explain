@@ -3,7 +3,7 @@ import os, subprocess, re, logging, collections, urllib
 from explainshell import config, store, errors
 
 devnull = open(os.devnull, 'w')
-SPLITSYNOP = re.compile(r'([^ ]+) - (.*)$')
+SPLITSYNOP = re.compile(r'([^ ]+).* - (.*)$')
 
 ENV = os.environ
 ENV["W3MMAN_MAN"] = "man"
@@ -146,25 +146,22 @@ def _parsetext(lines):
     if paragraphlines:
         yield store.paragraph(i, '\n'.join(paragraphlines), section, False)
 
-def _parsesynopsis(base, synopsis):
+def _parsesynopsis(synopsis):
     '''
-    >>> _parsesynopsis('/a/b/c', '/a/b/c: "p-r+o++g - foo bar."')
+    >>> _parsesynopsis('p-r+o++g (1) - foo bar.')
     ('p-r+o++g', 'foo bar')
     '''
-    synopsis = synopsis[len(base)+3:-1]
-    if synopsis[-1] == '.':
-        synopsis = synopsis[:-1]
     return SPLITSYNOP.match(synopsis).groups()
 
 class manpage(object):
     '''read the man page at path by executing w3mman2html.cgi and find its
-    synopsis with lexgrog
+    synopsis with whatis
 
     since some man pages share the same name (different versions), each
     alias of a man page has a score that's determined in this simple fashion:
     - name of man page source file is given a score of 10
     - all other names found for a particular man page are given a score of 1
-      (other names are found by scanning the output of lexgrog)
+      (other names are found by scanning the output of whatis)
     '''
     def __init__(self, path):
         self.path = path
@@ -180,7 +177,7 @@ class manpage(object):
         logger.info('executing %r', ' '.join(cmd))
         self._text = subprocess.check_output(cmd, stderr=devnull, env=ENV)
         try:
-            self.synopsis = subprocess.check_output(['lexgrog', self.path], stderr=devnull).rstrip()
+            self.synopsis = subprocess.check_output(['whatis', self.name], stderr=devnull).rstrip()
         except subprocess.CalledProcessError, e:
             logger.error('failed to extract synopsis for %s', self.name)
 
@@ -189,7 +186,7 @@ class manpage(object):
         if not self.paragraphs:
             raise errors.EmptyManpage(self.shortpath)
         if self.synopsis:
-            self.synopsis = [_parsesynopsis(self.path, l) for l in self.synopsis.splitlines()]
+            self.synopsis = [_parsesynopsis(l) for l in self.synopsis.splitlines()]
 
             # figure out aliases from the synopsis
             d = collections.OrderedDict()
